@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Đổi Avatar – Viettel Đà Nẵng 25 năm</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f3f3;color:#222;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.wrap{max-width:560px;margin:auto;padding:14px}
+h1{text-align:center;font-size:23px;margin:6px 0 2px}
+.sub{text-align:center;color:#666;margin:0 0 12px;font-size:16px}
+.stage{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:14px;background:#fff;box-shadow:0 2px 12px #0002}
+#preview{position:absolute;inset:0;width:100%;height:100%;display:block}
+.frame{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:2;pointer-events:none}
+.controls{background:#fff;border-radius:14px;padding:15px;margin-top:12px}
+.row{margin-top:11px}
+label{display:block;font-weight:700;font-size:15px;margin-bottom:6px}
+input[type=file]{width:100%;font-size:14px}
+input[type=range]{width:100%;accent-color:#d71920}
+button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;background:#d71920;color:#fff;font-size:17px;font-weight:800}
+.note{text-align:center;color:#777;font-size:12px;margin-top:9px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>ĐỔI AVATAR – VIETTEL ĐÀ NẴNG</h1>
+<p class="sub">25 năm Ngày truyền thống Viettel Đà Nẵng</p>
+<div class="stage">
+  <canvas id="preview" width="2560" height="2560"></canvas>
+  <img class="frame" src="viettel_da_nang_25nam_avatar_frame.png" alt="">
+</div>
+<div class="controls">
+  <div class="row"><label>1. Chọn ảnh của bạn</label><input id="file" type="file" accept="image/*"></div>
+  <div class="row"><label>2. Phóng to / thu nhỏ</label><input id="zoom" type="range" min="0.6" max="2.5" value="1" step="0.01"></div>
+  <div class="row"><label>3. Căn trái / phải</label><input id="x" type="range" min="-250" max="250" value="0"></div>
+  <div class="row"><label>4. Căn lên / xuống</label><input id="y" type="range" min="-250" max="250" value="0"></div>
+  <button id="download">⬇ TẢI AVATAR VỀ</button>
+  <div class="note">Ảnh phủ sát mép trong vòng đỏ; giữ nguyên số 25 và hiệu ứng gốc.</div>
+</div>
+<script>
+const S=2560;
+const CX=1280;
+const CY=1180;
+
+// Tăng nhẹ vùng mask để ảnh phủ kín hoàn toàn lòng vòng đỏ,
+// tránh lộ dải trắng ở mép trong.
+const R=858;
+
+const canvas=document.getElementById('preview');
+const ctx=canvas.getContext('2d',{alpha:true});
+
+const file=document.getElementById('file');
+const zoom=document.getElementById('zoom');
+const xr=document.getElementById('x');
+const yr=document.getElementById('y');
+
+let source=null;
+let frameImage=new Image();
+
+frameImage.onload=()=>draw();
+frameImage.src='viettel_da_nang_25nam_avatar_frame.png';
+
+file.addEventListener('change',()=>{
+ const f=file.files[0];
+ if(!f)return;
+
+ const u=URL.createObjectURL(f);
+ const im=new Image();
+
+ im.onload=()=>{
+   source=im;
+   draw();
+   URL.revokeObjectURL(u);
+ };
+
+ im.src=u;
+});
+
+function draw(){
+ // Xóa canvas hoàn toàn, không tạo nền trắng dưới ảnh.
+ ctx.clearRect(0,0,S,S);
+
+ if(!source){
+   if(frameImage.complete){
+     ctx.drawImage(frameImage,0,0,S,S);
+   }
+   return;
+ }
+
+ // ===== LỚP 1: ẢNH NGƯỜI DÙNG =====
+ ctx.save();
+
+ ctx.beginPath();
+ ctx.arc(CX,CY,R,0,Math.PI*2);
+ ctx.clip();
+
+ const z=Number(zoom.value);
+
+ const fit=Math.max(
+   (2*R)/source.naturalWidth,
+   (2*R)/source.naturalHeight
+ );
+
+ const iw=source.naturalWidth*fit*z;
+ const ih=source.naturalHeight*fit*z;
+
+ const f=S/560;
+
+ ctx.drawImage(
+   source,
+   CX-iw/2+Number(xr.value)*f,
+   CY-ih/2+Number(yr.value)*f,
+   iw,
+   ih
+ );
+
+ ctx.restore();
+
+ // ===== LỚP 2: KHUNG GỐC =====
+ // Giữ nguyên số 25, NĂM, ribbon và các hiệu ứng.
+ if(frameImage.complete){
+   ctx.drawImage(frameImage,0,0,S,S);
+ }
+}
+
+[zoom,xr,yr].forEach(e=>e.addEventListener('input',draw));
+
+document.getElementById('download').onclick=()=>{
+ if(!source){
+   alert('Vui lòng chọn ảnh trước.');
+   return;
+ }
+
+ draw();
+
+ requestAnimationFrame(()=>{
+   const a=document.createElement('a');
+   a.download='avatar-viettel-da-nang-25nam.png';
+   a.href=canvas.toDataURL('image/png');
+   a.click();
+ });
+};
+</script>
+</body>
+</html>
