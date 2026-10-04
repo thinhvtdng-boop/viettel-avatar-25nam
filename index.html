@@ -35,8 +35,8 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;backg
   <div class="row"><label>2. Phóng to / thu nhỏ</label><input id="zoom" type="range" min="0.6" max="2.5" value="1" step="0.01"></div>
   <div class="row"><label>3. Căn trái / phải</label><input id="x" type="range" min="-250" max="250" value="0"></div>
   <div class="row"><label>4. Căn lên / xuống</label><input id="y" type="range" min="-250" max="250" value="0"></div>
-  <button id="download">⬇ TẢI AVATAR VỀ</button>
-  <div class="note">Ảnh phủ sát mép trong vòng đỏ; giữ nguyên số 25 và hiệu ứng gốc.</div>
+  <button id="download">📲 LƯU AVATAR VÀO ẢNH</button>
+  <div class="note">Ảnh phủ sát mép trong vòng đỏ; giữ nguyên số 25 và hiệu ứng gốc. Trên iPhone, bấm LƯU AVATAR VÀO ẢNH rồi chọn “Lưu hình ảnh”.</div>
 </div>
 <script>
 const S=2560;
@@ -126,20 +126,54 @@ function draw(){
 
 [zoom,xr,yr].forEach(e=>e.addEventListener('input',draw));
 
-document.getElementById('download').onclick=()=>{
- if(!source){
-   alert('Vui lòng chọn ảnh trước.');
-   return;
- }
+document.getElementById('download').onclick = async () => {
+  if(!source){
+    alert('Vui lòng chọn ảnh trước.');
+    return;
+  }
 
- draw();
+  draw();
 
- requestAnimationFrame(()=>{
-   const a=document.createElement('a');
-   a.download='avatar-viettel-da-nang-25nam.png';
-   a.href=canvas.toDataURL('image/png');
-   a.click();
- });
+  canvas.toBlob(async (blob) => {
+    if(!blob){
+      alert('Không thể tạo ảnh. Vui lòng thử lại.');
+      return;
+    }
+
+    const file = new File(
+      [blob],
+      'avatar-viettel-da-nang-25nam.png',
+      { type: 'image/png' }
+    );
+
+    // iPhone/iPad: mở bảng chia sẻ để chọn "Lưu hình ảnh"
+    if(
+      navigator.share &&
+      (!navigator.canShare || navigator.canShare({ files: [file] }))
+    ){
+      try{
+        await navigator.share({
+          files: [file],
+          title: 'Avatar Viettel Đà Nẵng 25 năm'
+        });
+        return;
+      }catch(err){
+        // Người dùng đóng bảng chia sẻ thì không làm gì thêm
+        if(err && err.name === 'AbortError') return;
+      }
+    }
+
+    // Trình duyệt không hỗ trợ Web Share: tải file theo cách thông thường
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'avatar-viettel-da-nang-25nam.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
 };
 </script>
 </body>
